@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
-#include "timer.h"
+#include "./libs/timer.h"
 
 /* Variaveis globais */
 long int ocorrencia_letra[26];
