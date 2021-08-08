@@ -9,12 +9,13 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define NBASES 100 // numero de caracteres (bases nucleotidicas)
+#define NBASES 100000 // numero de caracteres (bases nucleotidicas)
 
 int main(void) {
   FILE *file;
   char basesArray[] = {'A', 'T', 'C', 'G'};
-  int result, i, index;
+  int result, i, index, count = 0;
+  char lastElement;
 
   file = fopen("in.txt", "wt");
 
@@ -24,8 +25,21 @@ int main(void) {
   }
 
   for (i = 0; i < NBASES; i++) {
-    index = i % 4; // criterio do indice pode ser mudado
-    result = fputc(basesArray[index], file);  					  
+    index = rand() % 4; // criterio do indice pode ser mudado
+
+    if (lastElement == basesArray[index] && count == 3) {
+      while (lastElement == basesArray[index])
+        index = rand() % 4;
+      count = 0;
+    }
+    else if (lastElement == basesArray[index])
+      count++;
+    else
+      count = 0;
+
+    lastElement = basesArray[index];
+    result = fputc(lastElement, file);
+					  
     if (result == EOF)		    
        printf("Erro na Gravacao\n");
   }
