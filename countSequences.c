@@ -8,77 +8,79 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <string.h>
 #include "./libs/timer.h"
 
 /* Variaveis globais */
-long int ocorrencia_letra[26];
-long int tamanho = 0; 
+long int ocorrencia_sequencia = 0;
+long int tamanho = 0;
+int num_threads;
+int tamanho_sequencia;
+char *sequencia_alvo;
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 char *nome_arquivo;
 
 /* Funcoes */
-void inicializa_vetor_ocorrencia() {
-  for (int i = 0 ; i < 26 ; i++)
-      ocorrencia_letra[i] = 0;
-}
 
-void *calcula_ocorrencia_letra(void *args) {
+void *calcula_ocorrencia_sequencia(void *args) {
   FILE *arq = fopen(nome_arquivo, "r");
 
   long int id = (long int) args;
-  long int blocos = tamanho/4;
-  long int inicio = blocos * id;
-  long int fim;
-  long int lido = 0; // Total lido pela thread. Não pode superar o tamanho do bloco.
 
-  char buffer[2048];
+  char *buffer = (char *) malloc(sizeof(char) * tamanho);
 
-  long int ocorrencia_letra_local[26];
+  long int ocorrencia_sequencia_local = 0;
 
-  for (int i = 0 ; i < 26 ; i++)
-      ocorrencia_letra_local[i] = 0;
+  while (!feof(arq))
+  {
+      fgets(buffer, tamanho, arq);
 
-  if (id == 3)
-      fim = tamanho;
+      long int i, j, aux, tam_buffer = strlen(buffer);
+      int incompativel;
 
-  else
-      fim = inicio + blocos;
+      for (i = id ; i < tam_buffer ; i += num_threads)
+      {
+            incompativel = 0;
+            aux = i;
 
-  fseek(arq, inicio, SEEK_SET);    
-
-  while (ftell(arq) < fim) {
-    fgets(buffer, sizeof(buffer), arq);
-    for (int i = 0 ; buffer[i] != '\0' && lido < blocos; i++, lido++) {
-        for (int j = 0 ; j < 26 ; j++) {
-            if (buffer[i] == 'a' + j || buffer[i] == 'A' + j) {
-                ocorrencia_letra_local[j] += 1;
-                break;
+            for (j = 0; j < tamanho_sequencia ; j++)
+            {
+                if (sequencia_alvo[j] == buffer[aux])
+                    aux++;
+                else {
+                    incompativel = 1;
+                    break;
+                }
             }
-        } 
-    }
+            if (incompativel == 0)
+                ocorrencia_sequencia_local += 1;
+
+      }
+
   }
+
 
   pthread_mutex_lock(&lock);
-  for (int i = 0 ; i < 26 ; i++) {
-      ocorrencia_letra[i] += ocorrencia_letra_local[i];
-  }
+
+  ocorrencia_sequencia += ocorrencia_sequencia_local;
+
   pthread_mutex_unlock(&lock);
   fclose(arq);
-
+  free(buffer);
   pthread_exit(NULL);
 }
 
 void inicializa_threads() {
-  pthread_t *tids = (pthread_t *) malloc(sizeof(pthread_t) * 4);
-  
-  for (long int i = 0 ; i < 4 ; i++) {
-      if (pthread_create((tids + i), NULL, calcula_ocorrencia_letra, (void *) i)) {
+  pthread_t *tids = (pthread_t *) malloc(sizeof(pthread_t) * num_threads);
+
+  for (long int i = 0 ; i < num_threads ; i++) {
+      if (pthread_create((tids + i), NULL, calcula_ocorrencia_sequencia, (void *) i)) {
           puts("erro");
           exit(255);
       }
   }
 
-  for (long int i = 0 ; i < 4 ; i++) {
+  for (long int i = 0 ; i < num_threads ; i++) {
       if (pthread_join(*(tids + i), NULL)) {
           puts("erro");
           exit(255);
@@ -90,43 +92,64 @@ void inicializa_threads() {
 // Funcao principal
 int main(int argc, char **argv) {
   double i,f;
+  if (argc < 4)
+  {
+      printf("Digite %s <nome do arquivo> <sequência desejada> <número de threads>.", argv[0]);
+      return 1;
+  }
   nome_arquivo = argv[1];
+  sequencia_alvo = argv[2];
+  num_threads = atoi(argv[3]);
+
+  if (num_threads == 0)
+  {
+      puts("Digite um número válido (maior que 0).");
+      return 2;
+  }
+  tamanho_sequencia = strlen(sequencia_alvo);
+
   FILE *arq = fopen(nome_arquivo, "r");
 
   if (!arq) {
       puts("erro");
       return 1;
   }
-  char buffer[500];
 
   fseek(arq, 0, SEEK_END);
   tamanho = ftell(arq);
   printf("%ld\n", tamanho);
 
-  long int ocorrencia_letra_seq[26];
+  long int ocorrencia_sequencia_seq = 0;
 
-  for (int i = 0 ; i < 26 ; i++) {
-      ocorrencia_letra_seq[i] = 0;
+  char *buffer = (char *) malloc(sizeof(char) * tamanho);
+
+  if (!buffer)
+  {
+      puts("erro buffer");
+      return 2;
   }
 
   rewind(arq);
 
   GET_TIME(i);
 
+  int posicao = 0;
+  char *aux;
+
   while (!feof(arq)) {
-    fgets(buffer, sizeof(buffer), arq);
-    for (int i = 0 ; buffer[i] != '\0' ; i++) {
-        for (int j = 0 ; j < 26 ; j++) {
-            if (buffer[i] == 'a' + j || buffer[i] == 'A' + j) {
-                ocorrencia_letra_seq[j] += 1;
-                break;
-            }
-        } 
+    fgets(buffer, tamanho, arq);
+
+    posicao = 0;
+
+    while ((aux = strstr(buffer + posicao, sequencia_alvo)) != NULL)
+    {
+        posicao = (aux - buffer) + 1;
+        ocorrencia_sequencia_seq++;
     }
+
   }
-  for (int i = 0 ; i < 26 ; i++) {
-      printf("Letra %c : %ld vezes\n", 'a' + i, ocorrencia_letra_seq[i]);
-  }
+
+    printf("Sequencia %s : %ld vezes\n", sequencia_alvo, ocorrencia_sequencia_seq);
 
   puts("-----------------------------------------------------------------------------------");
   fclose(arq);
@@ -135,16 +158,17 @@ int main(int argc, char **argv) {
 
   printf("%lf\n", f-i);
 
-  inicializa_vetor_ocorrencia();
   GET_TIME(i);
   inicializa_threads();
 
-  for (int i = 0 ; i < 26 ; i++) {
-      printf("Letra %c : %ld vezes\n", 'a' + i, ocorrencia_letra[i]);
-  }
+
+  printf("Sequencia %s : %ld vezes\n", sequencia_alvo, ocorrencia_sequencia);
+
   GET_TIME(f);
 
   printf("%lf\n", f-i);
-  
+
+  free(buffer);
+
   return 0;
 }
