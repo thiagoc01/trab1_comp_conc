@@ -12,69 +12,81 @@
 #include "./libs/timer.h"
 
 /* Variaveis globais */
-long int ocorrencia_sequencia = 0;
+long int ocorrencia_bases[4];
 long int tamanho = 0;
 int num_threads;
-int tamanho_sequencia;
-char *sequencia_alvo;
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 char *nome_arquivo;
 
 /* Funcoes */
 
-void *calcula_ocorrencia_sequencia(void *args) {
+void inicializa_ocorrencia_bases()
+{
+    for (int i = 0 ; i < 4 ; i++)
+        ocorrencia_bases[i] = 0;
+}
+
+void *calcula_ocorrencia_bases(void *args) {
   FILE *arq = fopen(nome_arquivo, "r");
 
-  long int id = (long int) args;
+  long int id = *(long int *) args;
+  long int blocos = tamanho / num_threads;
+  long int inicio = id * blocos;
+  long int fim;
+  long int lido = 0;
 
-  char *buffer = (char *) malloc(sizeof(char) * tamanho);
+  if (id == num_threads - 1)
+    fim = tamanho;
+  else
+    fim = inicio + blocos;
 
-  long int ocorrencia_sequencia_local = 0;
+  char buffer[512];
 
-  while (!feof(arq))
+  long int ocorrencia_bases_local[4];
+
+  for (int i = 0 ; i < 4 ; i++)
+    ocorrencia_bases_local[i] = 0;
+
+  int posicao;
+  char *aux;
+
+    fseek(arq, inicio, SEEK_CUR);
+
+  while (ftell(arq) < fim)
   {
-      fgets(buffer, tamanho, arq);
+      fgets(buffer, sizeof(buffer), arq);
 
-      long int i, j, aux, tam_buffer = strlen(buffer);
-      int incompativel;
-
-      for (i = id ; i < tam_buffer ; i += num_threads)
+      for (long int i = 0 ; buffer[i] != '\0' && lido < (fim - inicio) ; i++, lido++)
       {
-            incompativel = 0;
-            aux = i;
-
-            for (j = 0; j < tamanho_sequencia ; j++)
-            {
-                if (sequencia_alvo[j] == buffer[aux])
-                    aux++;
-                else {
-                    incompativel = 1;
-                    break;
-                }
-            }
-            if (incompativel == 0)
-                ocorrencia_sequencia_local += 1;
-
+          if (buffer[i] == 'A')
+            ocorrencia_bases_local[0]++;
+          else if (buffer[i] == 'C')
+            ocorrencia_bases_local[1]++;
+          else if (buffer[i] == 'G')
+            ocorrencia_bases_local[2]++;
+          else if (buffer[i] == 'T')
+            ocorrencia_bases_local[3]++;
       }
-
   }
 
 
   pthread_mutex_lock(&lock);
 
-  ocorrencia_sequencia += ocorrencia_sequencia_local;
+  for (int i = 0 ; i < 4 ; i++)
+      ocorrencia_bases[i] += ocorrencia_bases_local[i];
 
   pthread_mutex_unlock(&lock);
   fclose(arq);
-  free(buffer);
   pthread_exit(NULL);
 }
 
 void inicializa_threads() {
   pthread_t *tids = (pthread_t *) malloc(sizeof(pthread_t) * num_threads);
+  long int args[num_threads];
 
   for (long int i = 0 ; i < num_threads ; i++) {
-      if (pthread_create((tids + i), NULL, calcula_ocorrencia_sequencia, (void *) i)) {
+        args[i] = i;
+      if (pthread_create((tids + i), NULL, calcula_ocorrencia_bases, (void *) &args[i])) {
           puts("erro");
           exit(255);
       }
@@ -90,85 +102,92 @@ void inicializa_threads() {
 }
 
 // Funcao principal
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+ {
   double i,f;
-  if (argc < 4)
+
+  if (argc < 3)
   {
-      printf("Digite %s <nome do arquivo> <sequência desejada> <número de threads>.", argv[0]);
-      return 1;
+    printf("Digite %s <caminho do arquivo> <número de threads>.\n", argv[0]);
+    return 1;
+
   }
+
   nome_arquivo = argv[1];
-  sequencia_alvo = argv[2];
-  num_threads = atoi(argv[3]);
+  num_threads = atoi(argv[2]);
 
   if (num_threads == 0)
   {
       puts("Digite um número válido (maior que 0).");
       return 2;
   }
-  tamanho_sequencia = strlen(sequencia_alvo);
 
   FILE *arq = fopen(nome_arquivo, "r");
 
   if (!arq) {
       puts("erro");
-      return 1;
+      return 3;
   }
 
   fseek(arq, 0, SEEK_END);
   tamanho = ftell(arq);
   printf("%ld\n", tamanho);
 
-  long int ocorrencia_sequencia_seq = 0;
+  long int ocorrencia_bases_seq[4];
 
-  char *buffer = (char *) malloc(sizeof(char) * tamanho);
+  for (int i = 0 ; i < 4 ; i++)
+    ocorrencia_bases_seq[i] = 0;
 
-  if (!buffer)
-  {
-      puts("erro buffer");
-      return 2;
-  }
+  char buffer[512];
 
   rewind(arq);
 
   GET_TIME(i);
 
-  int posicao = 0;
-  char *aux;
-
   while (!feof(arq)) {
-    fgets(buffer, tamanho, arq);
+    fgets(buffer, sizeof(buffer), arq);
 
-    posicao = 0;
-
-    while ((aux = strstr(buffer + posicao, sequencia_alvo)) != NULL)
-    {
-        posicao = (aux - buffer) + 1;
-        ocorrencia_sequencia_seq++;
-    }
+     for (long int i = 0 ; buffer[i] != '\0' ; i++)
+      {
+          switch (buffer[i])
+          {
+            case 'A':
+                ocorrencia_bases_seq[0]++;
+                break;
+            case 'C':
+                ocorrencia_bases_seq[1]++;
+                break;
+            case 'G':
+                ocorrencia_bases_seq[2]++;
+                break;
+            case 'T':
+                ocorrencia_bases_seq[3]++;
+                break;
+          }
+      }
 
   }
 
-    printf("Sequencia %s : %ld vezes\n", sequencia_alvo, ocorrencia_sequencia_seq);
+  printf("Ocorrências:\n A: %ld vezes\tC: %ld vezes\tG: %ld vezes\tT: %d vezes", ocorrencia_bases_seq[0], ocorrencia_bases_seq[1], ocorrencia_bases_seq[2], ocorrencia_bases_seq[3]);
 
-  puts("-----------------------------------------------------------------------------------");
+  puts("\n-----------------------------------------------------------------------------------");
   fclose(arq);
 
   GET_TIME(f);
 
   printf("%lf\n", f-i);
 
+  inicializa_ocorrencia_bases();
+
   GET_TIME(i);
   inicializa_threads();
 
 
-  printf("Sequencia %s : %ld vezes\n", sequencia_alvo, ocorrencia_sequencia);
+  printf("Ocorrências:\n A: %ld vezes\tC: %ld vezes\tG: %ld vezes\tT: %d vezes\n", ocorrencia_bases[0], ocorrencia_bases[1], ocorrencia_bases[2], ocorrencia_bases[3]);
 
   GET_TIME(f);
 
   printf("%lf\n", f-i);
-
-  free(buffer);
 
   return 0;
 }
