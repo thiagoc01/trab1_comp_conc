@@ -1,5 +1,5 @@
 /*
-  * Programa: Algoritmo concorrente para encontrar as ocorrências de uma string num arquivo de texto
+  * Programa: Algoritmo concorrente para encontrar as ocorrências de um codon em uma sequencia de RNA
   * Alunos: Gabriele Jandres Cavalcanti e Thiago Figueiredo Lopes de Castro | DREs: 119159948 e 118090044
   * Disciplina: Computacao Concorrente - 2021.1
   * Modulo 1 - Trabalho 1
@@ -110,7 +110,6 @@ int main(int argc, char **argv)
   {
     printf("Digite %s <caminho do arquivo> <número de threads>.\n", argv[0]);
     return 1;
-
   }
 
   nome_arquivo = argv[1];
@@ -142,6 +141,7 @@ int main(int argc, char **argv)
 
   rewind(arq);
 
+  // sequencial 
   GET_TIME(i);
 
   while (!feof(arq)) {
@@ -175,19 +175,21 @@ int main(int argc, char **argv)
 
   GET_TIME(f);
 
-  printf("%lf\n", f-i);
+  printf("Tempo sequencial: %lf\n", f-i);
+
+  puts("-----------------------------------------------------------------------------------");
 
   inicializa_ocorrencia_bases();
 
   GET_TIME(i);
-  inicializa_threads();
 
+  inicializa_threads();
 
   printf("Ocorrências:\n A: %ld vezes\tC: %ld vezes\tG: %ld vezes\tT: %d vezes\n", ocorrencia_bases[0], ocorrencia_bases[1], ocorrencia_bases[2], ocorrencia_bases[3]);
 
   GET_TIME(f);
 
-  printf("%lf\n", f-i);
+  printf("Tempo concorrente: %lf\n", f-i);
 
   return 0;
 }

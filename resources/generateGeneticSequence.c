@@ -1,5 +1,5 @@
 /*
-  * Programa: Algoritmo para gerar um arquivo de texto com simulacao de um sequenciamento genetico
+  * Programa: Algoritmo para gerar um arquivo de texto com simulacao de um sequenciamento de RNA
   * Alunos: Gabriele Jandres Cavalcanti e Thiago Figueiredo Lopes de Castro | DREs: 119159948 e 118090044
   * Disciplina: Computacao Concorrente - 2021.1
   * Modulo 1 - Trabalho 1 - Complemento
@@ -9,11 +9,11 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define NBASES 10000000
+#define NBASES 1000000000
 
 int main(void) {
   FILE *file;
-  char bases_array[] = {'A', 'T', 'C', 'G'};
+  char bases_array[] = {'A', 'U', 'C', 'G'}; // array de bases nitrogenadas que formam o RNA
   int result, i, index, counter = 0; // counter conta o numero de bases iguais seguidas se ocorrer repetição. Maximo de 4 vezes
   char last_generated = ' '; // guarda a ultima base nitrogenada gerada 
 
