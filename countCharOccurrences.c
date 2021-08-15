@@ -48,8 +48,8 @@ void count_char_occurrences_seq(long int *char_occurrences_seq, char file_name[]
     for (long int i = 0 ; buffer[i] != '\0' ; i++) {
       for (int j = 0 ; j < 26 ; j++) {
         if (buffer[i] == 'a' + j || buffer[i] == 'A' + j) {
-            *(char_occurrences_seq +j) += 1;
-            break;
+          *(char_occurrences_seq +j) += 1;
+          break;
         }
       } 
     }
