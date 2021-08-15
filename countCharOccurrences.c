@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <string.h>
+#include <ctype.h>
 #include "./libs/timer.h"
 
 /* Variaveis globais */
@@ -57,11 +58,16 @@ void count_char_occurrences_seq(long int *char_occurrences_seq, char file_name[]
   fclose(file);
 }
 
-// Imprime um array de ocorrencias, se a ocorrencia do caractere correspondente nao for nula
-void print_char_occurrences(long int *array, char version[]) {
-  printf("--- VERSAO %s --- \n-- Ocorrencias de caracteres no arquivo %s -- \n", version, file_name);
-  for (int i = 0; i < 26; i++) {
-    if(*(array + i) != 0) printf("%c: %ld vezes \n", 'A' + i, *(array + i));
+// Imprime a ocorrencia de cada caractere, se a ocorrencia do caractere correspondente nao for nula
+void print_char_occurrences(long int *array, char version[], char char_wanted) {
+  if (char_wanted == ' ') {
+    printf("--- VERSAO %s --- \n-- Ocorrencias de caracteres no arquivo %s -- \n", version, file_name);
+    for (int i = 0; i < 26; i++) {
+      if(*(array + i) != 0) printf("%c: %ld vezes \n", 'A' + i, *(array + i));
+    }
+  } else {
+    int index = (char_wanted - 65); // indice do caractere no array de ocorrencias
+    printf("--- VERSAO %s --- \nO caractere %c foi encontrado %ld vezes no arquivo %s fornecido. \n", version, char_wanted, *(array + index), file_name);
   }
 }
 
@@ -178,7 +184,7 @@ int main(int argc, char **argv) {
   // Atribuicao dos parametros
   file_name = argv[1];
   nthreads = atoi(argv[2]);
-  wanted_char = argv[3] ? argv[3][0] : '\0'; // a variavel recebera algum valor se o usuario passar
+  wanted_char = argv[3] ? toupper(argv[3][0]) : ' '; // a variavel recebera algum valor se o usuario passar
 
   // Validacao do numero de threads a serem utilizadas na solucao concorrente
   if (nthreads == 0) {
@@ -190,7 +196,7 @@ int main(int argc, char **argv) {
   initialize_char_occurrences(char_occurrences_seq);
   GET_TIME(start);
   count_char_occurrences_seq(char_occurrences_seq, file_name);
-  print_char_occurrences(char_occurrences_seq, "SEQUENCIAL");
+  print_char_occurrences(char_occurrences_seq, "SEQUENCIAL", wanted_char);
   show_task_time(start);
 
   // Concorrente
@@ -198,7 +204,7 @@ int main(int argc, char **argv) {
   GET_TIME(start);
   create_threads(&tids, nthreads);
   join_threads(tids, nthreads);
-  print_char_occurrences(char_occurrences, "CONCORRENTE");
+  print_char_occurrences(char_occurrences, "CONCORRENTE", wanted_char);
   show_task_time(start);
 
   // Checa a corretude da solução
