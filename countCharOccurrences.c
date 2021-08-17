@@ -81,19 +81,8 @@ void show_task_time(double start) {
 // Funcao que as threads irao executar para contar a quantidade de caracteres de modo concorrente
 void *count_char_occurrences(void *arg) {
   long int id = (long int) arg; // identificador da thread
-  long int blockSize = size / nthreads; // tamanho do bloco de cada thread
-  long int first = id * blockSize; // elemento inicial do bloco da thread
-  long int end; // elemento final (nao processado) do bloco da thread
-  long int char_read = 0; // quantidade de caracteres ja lidos
   char buffer[512]; // buffer de leitura do arquivo
   long int char_occurrences_local[26]; // array local para controle de caracteres em cada bloco das threads
-
-  // Se houver resto a ultima thread que vai processa-lo
-  if (id == nthreads - 1) {
-    end = size;
-  } else {
-    end = first + blockSize;
-  }
 
   // Inicializa o array de ocorrencias local de cada thread
   for (int i = 0; i < 26; i++) {
@@ -102,18 +91,20 @@ void *count_char_occurrences(void *arg) {
 
   // Leitura do arquivo de entrada
   FILE *file = fopen(file_name, "r");
-  fseek(file, first, SEEK_CUR);
 
-  // Contagem dos caracteres enquanto nao chega no fim do arquivo
-  while (ftell(file) < end) {
+  while (!feof(file))
+  {
     fgets(buffer, sizeof(buffer), file);
-    for (long int i = 0 ; buffer[i] != '\0' && char_read < blockSize; i++, char_read++) {
+    int t = strlen(buffer);
+
+    for (long int i = id ; i < t; i+= nthreads) 
+    {
       for (int j = 0 ; j < 26 ; j++) {
         if (buffer[i] == 'a' + j || buffer[i] == 'A' + j) {
             char_occurrences_local[j] += 1;
             break;
         }
-      } 
+      }
     }
   }
   fclose(file);
