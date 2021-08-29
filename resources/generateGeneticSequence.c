@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define NBASES 1000000000
+#define NBASES 1000
 
 int main(void) {
   FILE *file;
