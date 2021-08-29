@@ -12,6 +12,8 @@
 #include <ctype.h>
 #include "./libs/timer.h"
 
+#define SIZE_BUFFER 512
+
 /* Variaveis globais */
 long int char_occurrences[26]; // quantidade de cada caractere no arquivo
 long int size = 0; // tamanho do arquivo de entrada
@@ -30,7 +32,7 @@ void initialize_char_occurrences(long int *array) {
 
 // Conta a quantidade de caracteres de modo sequencial
 void count_char_occurrences_seq(long int *char_occurrences_seq, char file_name[]) {
-  char buffer[512]; // buffer de leitura do arquivo
+  char buffer[SIZE_BUFFER]; // buffer de leitura do arquivo
 
   // Abertura do arquivo de entrada para leitura
   FILE *file = fopen(file_name, "r");
@@ -81,7 +83,7 @@ void show_task_time(double start) {
 // Funcao que as threads irao executar para contar a quantidade de caracteres de modo concorrente
 void *count_char_occurrences(void *arg) {
   long int id = (long int) arg; // identificador da thread
-  char buffer[512]; // buffer de leitura do arquivo
+  char buffer[SIZE_BUFFER]; // buffer de leitura do arquivo
   long int char_occurrences_local[26]; // array local para controle de caracteres em cada bloco das threads
 
   // Inicializa o array de ocorrencias local de cada thread
@@ -92,13 +94,11 @@ void *count_char_occurrences(void *arg) {
   // Leitura do arquivo de entrada
   FILE *file = fopen(file_name, "r");
 
-  while (!feof(file))
-  {
+  while (!feof(file)) {
     fgets(buffer, sizeof(buffer), file);
-    int t = strlen(buffer);
+    int size_buffer = strlen(buffer);
 
-    for (long int i = id ; i < t; i+= nthreads) 
-    {
+    for (long int i = id ; i < size_buffer; i += nthreads) {
       for (int j = 0 ; j < 26 ; j++) {
         if (buffer[i] == 'a' + j || buffer[i] == 'A' + j) {
             char_occurrences_local[j] += 1;
@@ -149,7 +149,7 @@ void join_threads(pthread_t *tids, int num_threads) {
 }
 
 // Funcao que checa a corretude da solucao concorrente
-void analyzeOutputCorrectness(long int *char_occurrences, long int *char_occurrences_seq) {
+void analyze_output_correctness(long int *char_occurrences, long int *char_occurrences_seq) {
   for (int i = 0; i < 26; i++) {
     if (*(char_occurrences_seq + i) != *(char_occurrences + i)) {
       printf("A contagem esta incorreta. O esperado para o caractere %c eh %ld e o encontrado foi %ld \n", 'A' + i, *(char_occurrences_seq + i), *(char_occurrences + i));
@@ -199,7 +199,7 @@ int main(int argc, char **argv) {
   show_task_time(start);
 
   // Checa a corretude da solução
-  analyzeOutputCorrectness(char_occurrences, char_occurrences_seq);
+  analyze_output_correctness(char_occurrences, char_occurrences_seq);
 
   return 0;
 }
