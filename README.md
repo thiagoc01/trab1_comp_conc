@@ -10,7 +10,7 @@
 5. [Autores](#autores)
 
 ## 🖥️ Tecnologias utilizadas
-O projeto foi desenvolvido utilizando a linguagem C e para a compilação recomendamos o uso do GCC (GNU Compiler Collection).
+O projeto foi desenvolvido utilizando a linguagem C e para a compilação recomenda-se o uso do GCC (GNU Compiler Collection).
 
 ![Badge](https://img.shields.io/badge/C-00599C?style=for-the-badge&logo=c&logoColor=white)
 
