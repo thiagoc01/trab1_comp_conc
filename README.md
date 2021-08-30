@@ -1,4 +1,4 @@
-# Computação Concorrente | Trabalho 01 | UFRJ
+# Computação Concorrente | Trabalho 01 | 2021.1
 *Solução concorrente para o problema de contar as ocorrências de caracteres e sequências em um arquivo de texto*
 
 ## Tabela de Conteúdo
