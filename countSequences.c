@@ -44,7 +44,7 @@ void treat_buffer_break(bool can_find_sequence, int last_position_sequence, FILE
   aux[0] = '\0';
 
   if (!same_char) {
-    if (!can_find_sequence) { 
+    if (!can_find_sequence) {
       fgets(aux, sequence_size - last_position_sequence + 1, file);
       buffer_position = 0;
 
@@ -110,9 +110,9 @@ void *calculate_total_occurrences(void *args) {
 
   // Se for a ultima thread o tamanho do bloco eh diferente (pode ser maior ou menor)
   if (id == num_threads - 1) {
-    block_size = size - start; 
-  } 
-  
+    block_size = size - start;
+  }
+
   buffer = (char *) malloc(sizeof(char) * block_size + 1); // aloca de acordo com o tamanho e soma mais um para o caractere nulo.
   if (!buffer) {
     printf("Erro de alocacao para o buffer\n");
@@ -237,36 +237,56 @@ void calculate_total_occurrences_seq(long int *total_occurrences_seq) {
       num_threads++;
   }
 
-  char *buffer = (char *) malloc(sizeof(char) * size + 1);
+  char *buffer = (char *) malloc(sizeof(char) * 512);
   if (!buffer) {
     printf("Erro de alocacao para o buffer\n");
     exit(1);
   }
-  
-  fgets(buffer, size + 1, file);
 
   if (sequence_size > 1) {
-    aux = strchr(buffer, wanted_sequence[0]);
-    while (aux) {
-      next = aux + 1;
-      b = 1;
-      a = 1;
+    while (fgets(buffer, 512, file) != NULL){
 
-      while (aux[a] != '\0' && wanted_sequence[b] != '\0') {
-        if (aux[a] != wanted_sequence[b])
-          break;
-        a++;
-        b++;
+      bool can_find_sequence;
 
-        if (b == sequence_size) {
-          (*total_occurrences_seq)++;
-          next = aux + sequence_size;
-          break;
+      aux = strchr(buffer, wanted_sequence[0]);
+
+      while (aux){
+        next = aux + 1;
+        b = 1;
+        a = 1;
+        can_find_sequence = false;
+
+        while (aux[a] != '\0' && wanted_sequence[b] != '\0'){
+
+            if (aux[a] != wanted_sequence[b]){
+
+                can_find_sequence = true;
+                break;
+            }
+            a++;
+            b++;
+
+            if (b == sequence_size){
+
+                (*total_occurrences_seq)++;
+                next = aux + sequence_size;
+                can_find_sequence = true;
+            }
+
         }
+        if (aux[a] == '\0'){
+
+            fpos_t pos;
+            fgetpos(file, &pos);
+            treat_buffer_break(can_find_sequence, b, file, total_occurrences_seq);
+            fsetpos(file, &pos);
+        }
+        aux = strchr(next, wanted_sequence[0]);
       }
-      aux = strchr(next, wanted_sequence[0]);
     }
+
   }
+
   else {
     int pos = 0;
     while ((aux = strchr(buffer + pos, wanted_sequence[0]))) {
@@ -325,6 +345,12 @@ int main(int argc, char **argv) {
   }
 
   sequence_size = strlen(wanted_sequence);
+
+  if (sequence_size == 0)
+  {
+      puts("A sequencia deve ter tamanho maior que 0.");
+      return 3;
+  }
   same_char = check_same_char(wanted_sequence);
 
   // Sequencial
