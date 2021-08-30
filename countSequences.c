@@ -192,9 +192,8 @@ void *calculate_total_occurrences(void *args) {
   long int total_occurrences_local = 0; // total de ocorrencias na sequencia no bloco da thread
   char *buffer; // buffer de leitura do arquivo
   long int total_read_buffer = 0, total_read_thread = 0; // Total lido pelo buffer. Não pode superar BUFFER_SIZE. Total lido pela thread. Não pode superar block_size.
-  long int buffer_position = 0, last_position_sequence = 1;
   long int buffers = 0; // Total lido do arquivo.
-  char *actual_char, *next_char;
+  char *actual_char;
 
   /* Booleana para indicar que chegou ao fim do bloco. Como o buffer tem um tamanho genérico, precisamos verificar se ao somar o próximo buffer não fomos além do bloco. */
   bool is_block_end = false;
