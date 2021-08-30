@@ -110,48 +110,22 @@ void treat_buffer_break(bool can_find_sequence, int last_position_sequence, FILE
   }
 }
 
-// Funcao que as threads vao executar para calcular o total de ocorrencias da sequencia no arquivo
-void *calculate_total_occurrences(void *args) {
-  FILE *file = fopen(file_name, "r");
-  long int id = (long int) args; // identificador da thread
-  long int block_size = size / num_threads; // tamanho de cada bloco da thread
-  long int start = id * block_size; // inicio do bloco de cada thread
-  long int total_occurrences_local = 0; // total de ocorrencias na sequencia no bloco da thread
-  char *buffer; // buffer de leitura do arquivo
-  long int total_read_buffer = 0, total_read_thread = 0; // Total lido pelo buffer. Não pode superar BUFFER_SIZE. Total lido pela thread. Não pode superar block_size.
-  long int buffer_position = 0, last_position_sequence = 1;
-  long int buffers = 0; // Total lido do arquivo.
+void read_and_calculate_sequences(FILE *file, char *buffer, long int block_size, long int *total_occurrences_local){
+
   char *actual_char, *next_char;
+  long int buffers = 0, total_read_thread = 0, total_read_buffer = 0;
+  long int buffer_position = 0, last_position_sequence = 1;
+  bool is_block_end = false;
 
-  /* Booleana para indicar que chegou ao fim do bloco. Como o buffer tem um tamanho genérico, precisamos verificar se ao somar o próximo buffer não fomos além do bloco. */
-  bool is_end_block = false;
+  while (!is_block_end){
 
-  // Se for a ultima thread o tamanho do bloco eh diferente (pode ser maior ou menor)
-  if (id == num_threads - 1) {
-    block_size = size - start;
-  }
-
-
-  buffer = (char *) malloc(sizeof(char) * BUFFER_SIZE); // aloca de acordo com o tamanho e soma mais um para o caractere nulo.
-  if (!buffer) {
-    printf("Erro de alocacao para o buffer\n");
-    exit(1);
-  }
-
-  fseek(file, start, SEEK_SET); // aponta para o inicio do bloco da thread
-
-  // Nao posso estar procurando por somente 1 char nesse caso
-  if (sequence_size > 1) {
-
-    while (!is_end_block){
-
-      if (buffers + 512 > block_size){ // Iremos passar do que a thread deve ler. Logo, subtraímos o que lemos até agora do tamanho do bloco para obter o que falta.
+      if (buffers + BUFFER_SIZE > block_size){ // Iremos passar do que a thread deve ler. Logo, subtraímos o que lemos até agora do tamanho do bloco para obter o que falta.
 
         fgets(buffer, block_size - buffers + 1, file);
-        is_end_block = true; // Indica que chegamos ao final do bloco.
+        is_block_end = true; // Indica que chegamos ao final do bloco.
       }
       else
-        fgets(buffer, 512, file); // Lê normalmente o tamanho total do buffer.
+        fgets(buffer, BUFFER_SIZE, file); // Lê normalmente o tamanho total do buffer.
 
       int current_buffer_size = strlen(buffer); // Tamanho do buffer atual. Apenas para não haver várias chamadas de strlen e também para o caso que não temos exatamente 511 caracteres.
       buffers += current_buffer_size; // Soma no aglomerado.
@@ -185,7 +159,7 @@ void *calculate_total_occurrences(void *args) {
             total_read_buffer++;
 
             if (last_position_sequence == sequence_size) {
-              total_occurrences_local++;
+              (*total_occurrences_local)++;
               next_char = actual_char + sequence_size; // Pular todas as letras depois da primeira letra encontrada
               can_find_sequence = true;
             }
@@ -196,7 +170,7 @@ void *calculate_total_occurrences(void *args) {
 
               fpos_t pos;
               fgetpos(file, &pos);
-              treat_buffer_break(can_find_sequence, last_position_sequence, file, &total_occurrences_local);
+              treat_buffer_break(can_find_sequence, last_position_sequence, file, total_occurrences_local);
               fsetpos(file, &pos);
           }
 
@@ -204,21 +178,56 @@ void *calculate_total_occurrences(void *args) {
         actual_char = strchr(next_char, wanted_sequence[0]);
       }
       total_read_thread += total_read_buffer;
-
     }
 
+}
+
+// Funcao que as threads vao executar para calcular o total de ocorrencias da sequencia no arquivo
+void *calculate_total_occurrences(void *args) {
+  FILE *file = fopen(file_name, "r");
+  long int id = (long int) args; // identificador da thread
+  long int block_size = size / num_threads; // tamanho de cada bloco da thread
+  long int start = id * block_size; // inicio do bloco de cada thread
+  long int total_occurrences_local = 0; // total de ocorrencias na sequencia no bloco da thread
+  char *buffer; // buffer de leitura do arquivo
+  long int total_read_buffer = 0, total_read_thread = 0; // Total lido pelo buffer. Não pode superar BUFFER_SIZE. Total lido pela thread. Não pode superar block_size.
+  long int buffer_position = 0, last_position_sequence = 1;
+  long int buffers = 0; // Total lido do arquivo.
+  char *actual_char, *next_char;
+
+  /* Booleana para indicar que chegou ao fim do bloco. Como o buffer tem um tamanho genérico, precisamos verificar se ao somar o próximo buffer não fomos além do bloco. */
+  bool is_block_end = false;
+
+  // Se for a ultima thread o tamanho do bloco eh diferente (pode ser maior ou menor)
+  if (id == num_threads - 1) {
+    block_size = size - start;
   }
 
-  else {
-    while (!is_end_block){
 
-      if (buffers + 512 > block_size){
+  buffer = (char *) malloc(sizeof(char) * BUFFER_SIZE); // aloca de acordo com o tamanho e soma mais um para o caractere nulo.
+  if (!buffer) {
+    printf("Erro de alocacao para o buffer\n");
+    exit(1);
+  }
+
+  fseek(file, start, SEEK_SET); // aponta para o inicio do bloco da thread
+
+  // Nao posso estar procurando por somente 1 char nesse caso
+  if (sequence_size > 1) {
+      read_and_calculate_sequences(file, buffer, block_size, &total_occurrences_local);
+  }
+
+  // A procura é por ocorrências de uma base apenas
+  else {
+    while (!is_block_end){
+
+      if (buffers + BUFFER_SIZE > block_size){
 
         fgets(buffer, block_size - buffers + 1, file);
-        is_end_block = true;
+        is_block_end = true;
       }
       else
-        fgets(buffer, 512, file);
+        fgets(buffer, BUFFER_SIZE, file);
 
       int tam_buffer = strlen(buffer);
       total_read_buffer = 0;
