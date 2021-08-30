@@ -43,14 +43,15 @@ bool check_same_char(char *s) {
 void treat_buffer_break(bool can_find_sequence, int last_position_sequence, FILE *file, long int *total_occurrences_local) {
   int buffer_position = 0;
   char aux[last_position_sequence * sequence_size + 1]; // buffer auxiliar para guardar o começo do outro bloco
+  char *test; // Irá ser usado para verificar o caso que a última thread chegou no fim do arquivo.
   aux[0] = '\0';
 
   if (!same_char) {
     if (!can_find_sequence) {
-      fgets(aux, sequence_size - last_position_sequence + 1, file);
+      test = fgets(aux, sequence_size - last_position_sequence + 1, file);
       buffer_position = 0;
 
-      if (aux){
+      if (test){
 
           while (aux[buffer_position] != '\0' && wanted_sequence[last_position_sequence] != '\0') {
 
@@ -85,9 +86,9 @@ void treat_buffer_break(bool can_find_sequence, int last_position_sequence, FILE
       if (i % sequence_size != 0)
         return;
 
-      fgets(aux, sequence_size - last_position_sequence + 1, file);
+      test = fgets(aux, sequence_size - last_position_sequence + 1, file);
 
-      if (aux){
+      if (test){
 
         buffer_position = 0;
 
