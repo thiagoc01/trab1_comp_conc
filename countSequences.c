@@ -52,7 +52,6 @@ void treat_buffer_break(bool can_find_sequence, int last_position_sequence, FILE
       buffer_position = 0;
 
       if (test){
-
           while (aux[buffer_position] != '\0' && wanted_sequence[last_position_sequence] != '\0') {
 
             if (aux[buffer_position] != wanted_sequence[last_position_sequence])
@@ -65,13 +64,9 @@ void treat_buffer_break(bool can_find_sequence, int last_position_sequence, FILE
               (*total_occurrences_local)++;
           }
       }
-
     }
-
     return;
-  }
-
-  else {
+  } else {
     if (!can_find_sequence) {
       int i = last_position_sequence;
       fpos_t pos;
@@ -89,7 +84,6 @@ void treat_buffer_break(bool can_find_sequence, int last_position_sequence, FILE
       test = fgets(aux, sequence_size - last_position_sequence + 1, file);
 
       if (test){
-
         buffer_position = 0;
 
         while (aux[buffer_position] != '\0' && wanted_sequence[last_position_sequence] != '\0') {
@@ -104,83 +98,73 @@ void treat_buffer_break(bool can_find_sequence, int last_position_sequence, FILE
           }
         }
       }
-
     }
 
     return;
   }
 }
 
-void read_and_calculate_sequences(FILE *file, char *buffer, long int block_size, long int *total_occurrences_local){
-
+void read_and_calculate_sequences(FILE *file, char *buffer, long int block_size, long int *total_occurrences_local) {
   char *actual_char, *next_char;
   long int buffers = 0, total_read_thread = 0, total_read_buffer = 0;
   long int buffer_position = 0, last_position_sequence = 1;
   bool is_block_end = false;
 
   while (!is_block_end){
-
-      if (buffers + BUFFER_SIZE > block_size){ // Iremos passar do que a thread deve ler. Logo, subtraímos o que lemos até agora do tamanho do bloco para obter o que falta.
-
-        fgets(buffer, block_size - buffers + 1, file);
-        is_block_end = true; // Indica que chegamos ao final do bloco.
-      }
-      else
-        fgets(buffer, BUFFER_SIZE, file); // Lê normalmente o tamanho total do buffer.
-
-      int current_buffer_size = strlen(buffer); // Tamanho do buffer atual. Apenas para não haver várias chamadas de strlen e também para o caso que não temos exatamente 511 caracteres.
-      buffers += current_buffer_size; // Soma no aglomerado.
-      total_read_buffer = 0;
-
-      actual_char = strchr(buffer, wanted_sequence[0]);
-      bool can_find_sequence = false; // Se can_find_sequence = true, então, ao chegar no final do buffer, tudo foi lido corretamente e a sequência não está partida entre dois blocos.
-
-      while (actual_char && (total_read_thread + total_read_buffer <= block_size)) { // Enquanto encontrar a primeira letra da sequência no buffer, há a possibilidade de haver uma sequência
-
-        total_read_buffer = (actual_char - buffer) + 1; // O caractere lido não é incluído no cálculo, por estar no endereço atual.
-        buffer_position = 1;
-        next_char = actual_char + 1; // Se não houver sequência a partir dessa letra encontrada, então a próxima letra será a adjacente à ela.
-
-        if (total_read_buffer <= current_buffer_size && total_read_thread + total_read_buffer <= block_size) { // Verifica se chegou ao fim do buffer ou ultrapassamos o que devemos ler.
-
-          last_position_sequence = 1;
-          can_find_sequence = false; // Reinicia can_find_sequence
-
-          bool is_everything_read = total_read_buffer <= current_buffer_size && (total_read_thread + total_read_buffer <= block_size);
-
-          while (is_everything_read && actual_char[buffer_position] != '\0' && wanted_sequence[last_position_sequence] != '\0') {
-
-            if (actual_char[buffer_position] != wanted_sequence[last_position_sequence]) {
-              can_find_sequence = true; // Indica que completou a leitura da sequência.
-              break;
-            }
-
-            buffer_position++;
-            last_position_sequence++;
-            total_read_buffer++;
-
-            if (last_position_sequence == sequence_size) {
-              (*total_occurrences_local)++;
-              next_char = actual_char + sequence_size; // Pular todas as letras depois da primeira letra encontrada
-              can_find_sequence = true;
-            }
-            is_everything_read = total_read_buffer <= current_buffer_size && (total_read_thread + total_read_buffer <= block_size);
-          }
-
-          if (actual_char[buffer_position] == '\0'){
-
-              fpos_t pos;
-              fgetpos(file, &pos);
-              treat_buffer_break(can_find_sequence, last_position_sequence, file, total_occurrences_local);
-              fsetpos(file, &pos);
-          }
-
-        }
-        actual_char = strchr(next_char, wanted_sequence[0]);
-      }
-      total_read_thread += total_read_buffer;
+    if (buffers + BUFFER_SIZE > block_size){ // Iremos passar do que a thread deve ler. Logo, subtraímos o que lemos até agora do tamanho do bloco para obter o que falta.
+      fgets(buffer, block_size - buffers + 1, file);
+      is_block_end = true; // Indica que chegamos ao final do bloco.
     }
+    else
+      fgets(buffer, BUFFER_SIZE, file); // Lê normalmente o tamanho total do buffer.
 
+    int current_buffer_size = strlen(buffer); // Tamanho do buffer atual. Apenas para não haver várias chamadas de strlen e também para o caso que não temos exatamente 511 caracteres.
+    buffers += current_buffer_size; // Soma no aglomerado.
+    total_read_buffer = 0;
+
+    actual_char = strchr(buffer, wanted_sequence[0]);
+    bool can_find_sequence = false; // Se can_find_sequence = true, então, ao chegar no final do buffer, tudo foi lido corretamente e a sequência não está partida entre dois blocos.
+
+    while (actual_char && (total_read_thread + total_read_buffer <= block_size)) { // Enquanto encontrar a primeira letra da sequência no buffer, há a possibilidade de haver uma sequência
+      total_read_buffer = (actual_char - buffer) + 1; // O caractere lido não é incluído no cálculo, por estar no endereço atual.
+      buffer_position = 1;
+      next_char = actual_char + 1; // Se não houver sequência a partir dessa letra encontrada, então a próxima letra será a adjacente à ela.
+
+      if (total_read_buffer <= current_buffer_size && total_read_thread + total_read_buffer <= block_size) { // Verifica se chegou ao fim do buffer ou ultrapassamos o que devemos ler.
+        last_position_sequence = 1;
+        can_find_sequence = false; // Reinicia can_find_sequence
+
+        bool is_everything_read = total_read_buffer <= current_buffer_size && (total_read_thread + total_read_buffer <= block_size);
+
+        while (is_everything_read && actual_char[buffer_position] != '\0' && wanted_sequence[last_position_sequence] != '\0') {
+          if (actual_char[buffer_position] != wanted_sequence[last_position_sequence]) {
+            can_find_sequence = true; // Indica que completou a leitura da sequência.
+            break;
+          }
+
+          buffer_position++;
+          last_position_sequence++;
+          total_read_buffer++;
+
+          if (last_position_sequence == sequence_size) {
+            (*total_occurrences_local)++;
+            next_char = actual_char + sequence_size; // Pular todas as letras depois da primeira letra encontrada
+            can_find_sequence = true;
+          }
+          is_everything_read = total_read_buffer <= current_buffer_size && (total_read_thread + total_read_buffer <= block_size);
+        }
+
+        if (actual_char[buffer_position] == '\0'){
+          fpos_t pos;
+          fgetpos(file, &pos);
+          treat_buffer_break(can_find_sequence, last_position_sequence, file, total_occurrences_local);
+          fsetpos(file, &pos);
+        }
+      }
+      actual_char = strchr(next_char, wanted_sequence[0]);
+    }
+    total_read_thread += total_read_buffer;
+  }
 }
 
 // Funcao que as threads vao executar para calcular o total de ocorrencias da sequencia no arquivo
@@ -195,7 +179,7 @@ void *calculate_total_occurrences(void *args) {
   long int buffers = 0; // Total lido do arquivo.
   char *actual_char;
 
-  /* Booleana para indicar que chegou ao fim do bloco. Como o buffer tem um tamanho genérico, precisamos verificar se ao somar o próximo buffer não fomos além do bloco. */
+  // Booleana para indicar que chegou ao fim do bloco. Como o buffer tem um tamanho genérico, precisamos verificar se ao somar o próximo buffer não fomos além do bloco. 
   bool is_block_end = false;
 
   // Se for a ultima thread o tamanho do bloco eh diferente (pode ser maior ou menor)
@@ -214,15 +198,14 @@ void *calculate_total_occurrences(void *args) {
 
   // Nao posso estar procurando por somente 1 char nesse caso
   if (sequence_size > 1) {
-      read_and_calculate_sequences(file, buffer, block_size, &total_occurrences_local);
+    read_and_calculate_sequences(file, buffer, block_size, &total_occurrences_local);
   }
 
   // A procura é por ocorrências de uma base apenas
   else {
     while (!is_block_end){
 
-      if (buffers + BUFFER_SIZE > block_size){
-
+      if (buffers + BUFFER_SIZE > block_size) {
         fgets(buffer, block_size - buffers + 1, file);
         is_block_end = true;
       }
@@ -240,7 +223,6 @@ void *calculate_total_occurrences(void *args) {
           total_read_buffer = (actual_char - buffer) + 1;
       }
       total_read_thread += total_read_buffer;
-
     }
   }
 
@@ -307,9 +289,7 @@ void calculate_total_occurrences_seq(long int *total_occurrences_seq, FILE *file
 
   if (sequence_size > 1) {
     while (fgets(buffer, BUFFER_SIZE, file) != NULL){
-
       bool can_find_sequence;
-
       aux = strchr(buffer, wanted_sequence[0]);
 
       while (aux){
@@ -319,25 +299,20 @@ void calculate_total_occurrences_seq(long int *total_occurrences_seq, FILE *file
         can_find_sequence = false;
 
         while (aux[a] != '\0' && wanted_sequence[b] != '\0'){
+          if (aux[a] != wanted_sequence[b]){
+              can_find_sequence = true;
+              break;
+          }
+          a++;
+          b++;
 
-            if (aux[a] != wanted_sequence[b]){
-
-                can_find_sequence = true;
-                break;
-            }
-            a++;
-            b++;
-
-            if (b == sequence_size){
-
-                (*total_occurrences_seq)++;
-                next = aux + sequence_size;
-                can_find_sequence = true;
-            }
-
+          if (b == sequence_size){
+              (*total_occurrences_seq)++;
+              next = aux + sequence_size;
+              can_find_sequence = true;
+          }
         }
         if (aux[a] == '\0'){
-
             fpos_t pos;
             fgetpos(file, &pos);
             treat_buffer_break(can_find_sequence, b, file, total_occurrences_seq);
@@ -351,12 +326,10 @@ void calculate_total_occurrences_seq(long int *total_occurrences_seq, FILE *file
 
   else {
     while (fgets(buffer, BUFFER_SIZE, file)){
-
       int pos = 0;
       while ((aux = strchr(buffer + pos, wanted_sequence[0]))){
-
-          (*total_occurrences_seq)++;
-          pos = (aux - buffer) + 1;
+        (*total_occurrences_seq)++;
+        pos = (aux - buffer) + 1;
       }
     }
   }
@@ -406,16 +379,15 @@ int main(int argc, char **argv) {
 
   // Validacao do numero de threads a serem utilizadas na solucao concorrente
   if (num_threads == 0) {
-    puts("Digite um numero valido (maior que 0).");
+    printf("Digite um numero valido (maior que 0).");
     return 2;
   }
 
   sequence_size = strlen(wanted_sequence);
 
   if (sequence_size == 0){
-
-      puts("A sequencia deve ter tamanho maior que 0.");
-      return 3;
+    printf("A sequencia deve ter tamanho maior que 0.");
+    return 3;
   }
 
   same_char = check_same_char(wanted_sequence);
