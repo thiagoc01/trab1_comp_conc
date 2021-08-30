@@ -4,9 +4,10 @@
 ## Tabela de Conteúdo
 
 1. [Tecnologias utilizadas](#tecnologias-utilizadas)
-2. [Estrutura do repositório](#estrutura-do-repositorio)
-3. [Como usar o programa?](#como-usar-o-programa)
-4. [Autores](#autores)
+2. [Estrutura do repositório](#estrutura-do-repositório)
+3. [Como gerar uma sequência de entrada?](#como-gerar-uma-sequência-de-entrada)
+4. [Como usar o programa?](#como-usar-o-programa)
+5. [Autores](#autores)
 
 ## Tecnologias utilizadas
 O projeto foi desenvolvido utilizando a linguagem C e para a compilação recomendamos o uso do GCC (GNU Compiler Collection).
@@ -23,6 +24,20 @@ Além disso, o repositório conta com os dois arquivos principais:
 * **countCharOccurrences**: código fonte responsável por contar as ocorrências de um caractere específico ou de todos os caracteres presentes em um arquivo de entrada
 * **countSequences**: código fonte responsável por contar as ocorrências de determinada sequência em um arquivo de entrada
 
+## Como gerar uma sequência de entrada?
+Caso queira utilizar como entrada um sequenciamento de DNA diferente do que se encontra nesse repositório, você pode utilizar o programa *generateGeneticSequence*, que se encontra no subdiretório resources. Para editar o tamanho do arquivo a ser gerado, basta alterar a macro NBASES com o valor desejado e seguir o passo a passo abaixo:
+
+1. Compile o programa
+```
+  gcc generateGeneticSequence.c -o genSeq
+```
+
+2. Execute o programa
+```
+  ./genSeq <arquivo de entrada> <numero de threads>
+```
+O arquivo de entrada gerado estará em *in/in.txt*.
+
 ## Como usar o programa?
 
 1.  Clone esse repositório
@@ -32,19 +47,20 @@ Além disso, o repositório conta com os dois arquivos principais:
 
 2. Compile o programa
 ```
-  gcc countCharOccurrences.c -o countChar -Wall -lpthread
-  gcc countSequences.c -o countSeq -Wall -lpthread
+  gcc countCharOccurrences.c -o countChar -lpthread
+  gcc countSequences.c -o countSeq -lpthread
 ```
 
 3. Execute o programa
+
 Para o problema de contagem de caracteres no arquivo de entrada, utilize:
 ```
-  ./countCharOccurrences <arquivo de entrada> <numero de threads>
+  ./countChar <arquivo de entrada> <numero de threads>
 ```
 
 Caso queira descobrir a quantidade de um caractere específico, um último paramêtro opcional pode ser passado. Utilize:
 ```
-  ./countCharOccurrences <arquivo de entrada> <numero de threads> <caractere a ser procurado>
+  ./countChar <arquivo de entrada> <numero de threads> <caractere a ser procurado>
 ```
 
 Para o problema de contagem de sequências no arquivo de entrada, utilize:
