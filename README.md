@@ -34,7 +34,7 @@ Caso queira utilizar como entrada um sequenciamento de DNA diferente do que se e
 
 2. Execute o programa
 ```
-  ./genSeq <arquivo de entrada> <numero de threads>
+  ./genSeq
 ```
 O arquivo de entrada gerado estará em *in/in.txt*.
 
